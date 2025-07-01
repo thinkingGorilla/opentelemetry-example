@@ -3,6 +3,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
+from opentelemetry.semconv.trace import HttpFlavorValues, SpanAttributes
 
 from local_machine_resource_detector import LocalMachineResourceDetector
 
@@ -24,29 +25,34 @@ def configure_trace(name, version):
     trace.set_tracer_provider(provider)
     return trace.get_tracer(name, version)
 
+
 tracer = configure_trace("shopper", "0.1.2")
+
 
 @tracer.start_as_current_span("browse")
 def browse():
     print("visiting the grocery store")
     span = trace.get_current_span()
-    span.set_attribute(
+    span.set_attributes(
         {
-            "http.method": "GET",
-            "http.flavor": "1.1",
-            "http.url": "http://localhost:5000",
-            "net.peer.ip": "127.0.0.1",
+            SpanAttributes.HTTP_REQUEST_METHOD: "GET",
+            SpanAttributes.HTTP_FLAVOR: HttpFlavorValues.HTTP_1_1.value,
+            SpanAttributes.HTTP_URL: "http://localhost:5000",
+            SpanAttributes.NET_PEER_IP: "127.0.0.1",
         }
     )
     add_item_to_cart("orange")
+
 
 @tracer.start_as_current_span("add item to cart")
 def add_item_to_cart(item):
     print("add {} to cart".format(item))
 
+
 @tracer.start_as_current_span("visit store")
 def visit_store():
     browse()
+
 
 if __name__ == "__main__":
     visit_store()
