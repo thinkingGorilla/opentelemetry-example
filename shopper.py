@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
 from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter,SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
 
-def configure_trace():
+def configure_trace(name, version):
     exporter = ConsoleSpanExporter()
-    span_processor = SimpleSpanProcessor(exporter)
-    provider = TracerProvider()
+    span_processor = BatchSpanProcessor(exporter)
+    resource = Resource.create(
+        {
+            "service.name": name,
+            "service.version": version,
+        }
+    )
+    provider = TracerProvider(resource=resource)
     provider.add_span_processor(span_processor)
     trace.set_tracer_provider(provider)
-    return trace.get_tracer("shopper.py", "0.0.1")
+    return trace.get_tracer(name, version)
 
-tracer = configure_trace()
+tracer = configure_trace("shopper", "0.1.2")
 
 @tracer.start_as_current_span("browse")
 def browse():
