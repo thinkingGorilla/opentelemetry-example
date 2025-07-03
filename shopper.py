@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import requests
 from opentelemetry import trace
+from opentelemetry.propagate import inject
 from opentelemetry.semconv.trace import HttpFlavorValues, SpanAttributes
 
 from common import configure_tracer
@@ -12,7 +13,7 @@ tracer = configure_tracer("shopper", "0.1.2")
 def browse():
     print("visiting the grocery store")
     with tracer.start_as_current_span("web request", kind=trace.SpanKind.CLIENT) as span:
-        url = "http://localhost:5000"
+        url = "http://localhost:5000/products"
         span.set_attributes(
             {
                 SpanAttributes.HTTP_REQUEST_METHOD: "GET",
@@ -21,7 +22,20 @@ def browse():
                 SpanAttributes.NET_PEER_IP: "127.0.0.1",
             }
         )
-        resp = requests.get(url)
+        headers = {}
+        inject(headers)
+        span.add_event("about to send a request")
+        resp = requests.get(url, headers=headers)
+        span.add_event("request sent", attributes={"rul": url}, timestamp=0)
+        try:
+            url = "invalid_url"
+            resp = requests.get(url, headers=headers)
+            span.add_event("request sent", attributes={"rul": url}, timestamp=0)
+        except Exception as err:
+            attribute = {
+                SpanAttributes.EXCEPTION_TYPE: str(err),
+            }
+            span.add_event("exception", attributes=attribute)
         span.set_attribute(SpanAttributes.HTTP_STATUS_CODE, resp.status_code)
         add_item_to_cart("orange", 5)
 
