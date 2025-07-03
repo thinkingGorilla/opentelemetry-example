@@ -5,7 +5,7 @@ from opentelemetry.propagate import inject
 from opentelemetry.semconv.trace import HttpFlavorValues, SpanAttributes
 from opentelemetry.trace import StatusCode, Status
 
-from common import configure_tracer
+from chapter4.common import configure_tracer
 
 tracer = configure_tracer("shopper", "0.1.2")
 
