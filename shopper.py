@@ -32,10 +32,7 @@ def browse():
             resp = requests.get(url, headers=headers)
             span.add_event("request sent", attributes={"rul": url}, timestamp=0)
         except Exception as err:
-            attribute = {
-                SpanAttributes.EXCEPTION_TYPE: str(err),
-            }
-            span.add_event("exception", attributes=attribute)
+            span.record_exception(err)
         span.set_attribute(SpanAttributes.HTTP_STATUS_CODE, resp.status_code)
         add_item_to_cart("orange", 5)
 
