@@ -4,3 +4,4 @@ opentelemetry-api==1.18.0
 opentelemetry-sdk==1.18.0
 opentelemetry-propagator-b3==1.10.0
 opentelemetry-exporter-prometheus==1.12.0rc1
+opentelemetry-instrumentation-wsgi==0.39.b0
