@@ -5,9 +5,10 @@ from opentelemetry.propagate import inject
 from opentelemetry.semconv.trace import HttpFlavorValues, SpanAttributes
 from opentelemetry.trace import StatusCode, Status
 
-from chapter4.common import configure_tracer
+from chapter4.common import configure_tracer, configure_meter
 
 tracer = configure_tracer("shopper", "0.1.2")
+meter = configure_meter("shopper", "0.1.2")
 
 
 @tracer.start_as_current_span("browse")
@@ -19,7 +20,7 @@ def browse():
         url = "http://localhost:5000/products/invalid"
         span.set_attributes(
             {
-                SpanAttributes.HTTP_REQUEST_METHOD: "GET",
+                SpanAttributes.HTTP_METHOD: "GET",
                 SpanAttributes.HTTP_FLAVOR: str(HttpFlavorValues.HTTP_1_1),
                 SpanAttributes.HTTP_URL: url,
                 SpanAttributes.NET_PEER_IP: "127.0.0.1",

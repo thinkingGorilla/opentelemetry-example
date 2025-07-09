@@ -3,12 +3,12 @@ import time
 
 from opentelemetry.metrics import Observation
 from opentelemetry.metrics import get_meter_provider, set_meter_provider
-from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics import MeterProvider, Counter
 from opentelemetry.sdk.metrics.export import (
     ConsoleMetricExporter,
     PeriodicExportingMetricReader
 )
-from opentelemetry.sdk.metrics.view import View, DropAggregation
+from opentelemetry.sdk.metrics.view import View, DropAggregation, LastValueAggregation
 from opentelemetry.sdk.resources import Resource
 
 
@@ -24,7 +24,13 @@ def configure_meter_provider():
     exporter = ConsoleMetricExporter()
     reader = PeriodicExportingMetricReader(exporter, export_interval_millis=5000)
     view_all = View(instrument_name="*", aggregation=DropAggregation())
-    view = View(instrument_name="inventory")
+    view = View(
+        instrument_type=Counter,
+        attribute_keys=[],
+        name="sold",
+        description="total itemsold",
+        aggregation=LastValueAggregation(),
+    )
     provider = MeterProvider(
         metric_readers=[reader],
         resource=Resource.create(),

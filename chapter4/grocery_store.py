@@ -8,17 +8,23 @@ from opentelemetry.semconv.trace import HttpFlavorValues, SpanAttributes
 from opentelemetry.trace import SpanKind
 from opentelemetry.trace.propagation import tracecontext
 
+from common import configure_tracer, set_span_attribute_from_flask, configure_meter
+
+tracer = configure_tracer("grocery-store", "0.1.2")
+meter = configure_meter("grocery-store", "0.1.2")
+requests_counter = meter.create_counter(
+    name="requests",
+    unit="request",
+    description="Total number of requests",
+)
 set_global_textmap(CompositePropagator([B3MultiFormat(), tracecontext.TraceContextTextMapPropagator()]))
-
-from common import configure_tracer, set_span_attribute_from_flask
-
-tracer = configure_tracer("0.1.2", "grocery-store")
 app = Flask(__name__)
 
 
 @app.before_request
 def before_request_func():
     token = context.attach(extract(request.headers))
+    requests_counter.add(1)
     request.environ["context_token"] = token
 
 
@@ -27,6 +33,11 @@ def teardown_request_func(exception):
     token = request.environ.get("context_token", None)
     if token:
         context.detach(token)
+
+@app.after_request
+def after_request_func(response):
+    requests_counter.add(1, {"code": response.status_code})
+    return response
 
 
 @app.route("/")
@@ -44,7 +55,7 @@ def products():
         url = "http://localhost:5001/inventory"
         span.set_attributes(
             {
-                SpanAttributes.HTTP_REQUEST_METHOD: "GET",
+                SpanAttributes.HTTP_METHOD: "GET",
                 SpanAttributes.HTTP_FLAVOR: str(HttpFlavorValues.HTTP_1_1),
                 SpanAttributes.HTTP_URL: url,
                 SpanAttributes.NET_PEER_IP: "127.0.0.1",
