@@ -1,6 +1,8 @@
+import resource
+
 from flask import request
 from opentelemetry import trace
-from opentelemetry.metrics import get_meter_provider, set_meter_provider
+from opentelemetry.metrics import get_meter_provider, set_meter_provider, Observation
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import (
     ConsoleMetricExporter,
@@ -8,11 +10,33 @@ from opentelemetry.sdk.metrics.export import (
 )
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.semconv.resource import ResourceAttributes
 from opentelemetry.semconv.trace import SpanAttributes
 
 from local_machine_resource_detector import LocalMachineResourceDetector
+
+
+def configure_meter(name, version):
+    exporter = ConsoleMetricExporter()
+    reader = PeriodicExportingMetricReader(exporter, export_interval_millis=5000)
+    local_resource = LocalMachineResourceDetector().detect()
+    resource = local_resource.merge(
+        Resource.create(
+            {
+                ResourceAttributes.SERVICE_NAME: name,
+                ResourceAttributes.SERVICE_VERSION: version,
+            }
+        )
+    )
+    provider = MeterProvider(metric_readers=[reader], resource=resource)
+    set_meter_provider(provider)
+    schema_url = "https://opentelemetry.io/schemas/1.9.0"
+    return get_meter_provider().get_meter(
+        name=name,
+        version=version,
+        schema_url=schema_url,
+    )
 
 
 def configure_tracer(name, version):
@@ -33,7 +57,7 @@ def configure_tracer(name, version):
     return trace.get_tracer(name, version)
 
 
-def set_span_attribute_from_flask():
+def set_span_attributes_from_flask():
     span = trace.get_current_span()
     span.set_attributes(
         {
@@ -48,23 +72,14 @@ def set_span_attribute_from_flask():
     )
 
 
-def configure_meter(name, version):
-    exporter = ConsoleMetricExporter()
-    reader = PeriodicExportingMetricReader(exporter, export_interval_millis=5000)
-    local_source = LocalMachineResourceDetector().detect()
-    resource = local_source.merge(
-        Resource.create(
-            {
-                ResourceAttributes.SERVICE_NAME: name,
-                ResourceAttributes.SERVICE_VERSION: version,
-            }
-        )
-    )
-    provider = MeterProvider(metric_readers=[reader], resource=resource)
-    set_meter_provider(provider)
-    schema_url = "https://opentelemetry.io/schemas/1.9.0"
-    return get_meter_provider().get_meter(
-        name=name,
-        version=version,
-        schema_url=schema_url,
+def record_max_rss_callback(result):
+    yield Observation(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+
+
+def start_recording_memory_metrics(meter):
+    meter.create_observable_gauge(
+        callbacks=[record_max_rss_callback],
+        name="maxrss",
+        unit="bytes",
+        description="Max resident set size",
     )
