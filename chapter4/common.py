@@ -1,8 +1,14 @@
+import logging
 import resource
 
 from flask import request
 from opentelemetry import trace
+from opentelemetry._logs import (
+    set_logger_provider,
+)
 from opentelemetry.metrics import get_meter_provider, set_meter_provider, Observation
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+from opentelemetry.sdk._logs.export import ConsoleLogExporter, BatchLogRecordProcessor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import (
     ConsoleMetricExporter,
@@ -15,6 +21,31 @@ from opentelemetry.semconv.resource import ResourceAttributes
 from opentelemetry.semconv.trace import SpanAttributes
 
 from local_machine_resource_detector import LocalMachineResourceDetector
+
+
+def configure_logger(name, version):
+    provider = LoggerProvider(resource=Resource.create())
+    set_logger_provider(provider)
+    exporter = ConsoleLogExporter()
+    provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    handler = LoggingHandler()
+    logger.addHandler(handler)
+    return logger
+
+
+def record_max_rss_callback(result):
+    yield Observation(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+
+
+def start_recording_memory_metrics(meter):
+    meter.create_observable_gauge(
+        callbacks=[record_max_rss_callback],
+        name="maxrss",
+        unit="bytes",
+        description="Max resident set size",
+    )
 
 
 def configure_meter(name, version):
@@ -69,17 +100,4 @@ def set_span_attributes_from_flask():
             SpanAttributes.HTTP_TARGET: request.path,
             SpanAttributes.HTTP_CLIENT_IP: request.remote_addr,
         }
-    )
-
-
-def record_max_rss_callback(result):
-    yield Observation(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-
-
-def start_recording_memory_metrics(meter):
-    meter.create_observable_gauge(
-        callbacks=[record_max_rss_callback],
-        name="maxrss",
-        unit="bytes",
-        description="Max resident set size",
     )

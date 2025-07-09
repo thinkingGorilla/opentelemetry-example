@@ -7,7 +7,7 @@ from opentelemetry.propagate import inject
 from opentelemetry.semconv.trace import HttpFlavorValues, SpanAttributes
 from opentelemetry.trace import Status, StatusCode
 
-from common import configure_meter, configure_tracer, start_recording_memory_metrics
+from common import configure_meter, configure_tracer, configure_logger, start_recording_memory_metrics
 
 tracer = configure_tracer("shopper", "0.1.2")
 meter = configure_meter("shopper", "0.1.2")
@@ -22,6 +22,7 @@ upstream_duration_histo = meter.create_histogram(
     description="duration of upstream requests",
     unit="ms",
 )
+logger = configure_logger("shopper", "0.1.2")
 
 
 @tracer.start_as_current_span("browse")
@@ -72,7 +73,7 @@ def add_item_to_cart(item, quantity):
             "quantity": quantity,
         }
     )
-    print("add {} to cart".format(item))
+    logger.info("add {} to cart".format(item))
 
 
 @tracer.start_as_current_span("visit store")

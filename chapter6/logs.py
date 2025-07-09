@@ -1,7 +1,7 @@
 import logging
 
 from opentelemetry._logs import (
-    set_logger_provider
+    set_logger_provider,
 )
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import ConsoleLogExporter, BatchLogRecordProcessor

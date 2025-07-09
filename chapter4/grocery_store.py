@@ -1,8 +1,10 @@
 import time
+from logging.config import dictConfig
 
 import requests
 from flask import Flask, request
 from opentelemetry import context
+from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
 from opentelemetry.propagate import extract, inject, set_global_textmap
 from opentelemetry.propagators.b3 import B3MultiFormat
 from opentelemetry.propagators.composite import CompositePropagator
@@ -10,8 +12,13 @@ from opentelemetry.semconv.trace import HttpFlavorValues, SpanAttributes
 from opentelemetry.trace import SpanKind
 from opentelemetry.trace.propagation import tracecontext
 
-from common import configure_meter, configure_tracer, set_span_attributes_from_flask
-from common import start_recording_memory_metrics
+from common import (
+    configure_meter,
+    configure_tracer,
+    configure_logger,
+    set_span_attributes_from_flask,
+    start_recording_memory_metrics
+)
 
 tracer = configure_tracer("grocery-store", "0.1.2")
 meter = configure_meter("grocery-store", "0.1.2")
@@ -36,10 +43,24 @@ concurrent_counter = meter.create_up_down_counter(
     unit="request",
     description="Total number of concurrent requests",
 )
+logger = configure_logger("grocery-store", "0.1.2")
+dictConfig(
+    {
+        "version": 1,
+        "handlers": {
+            "otlp": {
+                "class": "opentelemetry.sdk._logs.LoggingHandler",
+            }
+        },
+        "root": {"level": "DEBUG", "handlers": ["otlp"]},
+    }
+)
+
 set_global_textmap(
     CompositePropagator([tracecontext.TraceContextTextMapPropagator(), B3MultiFormat()])
 )
 app = Flask(__name__)
+app.wsgi_app = OpenTelemetryMiddleware(app.wsgi_app)
 
 
 @app.before_request
