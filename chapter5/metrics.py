@@ -8,6 +8,7 @@ from opentelemetry.sdk.metrics.export import (
     ConsoleMetricExporter,
     PeriodicExportingMetricReader
 )
+from opentelemetry.sdk.metrics.view import View, DropAggregation
 from opentelemetry.sdk.resources import Resource
 
 
@@ -22,7 +23,13 @@ def configure_meter_provider():
 
     exporter = ConsoleMetricExporter()
     reader = PeriodicExportingMetricReader(exporter, export_interval_millis=5000)
-    provider = MeterProvider(metric_readers=[reader], resource=Resource.create())
+    view_all = View(instrument_name="*", aggregation=DropAggregation())
+    view = View(instrument_name="inventory")
+    provider = MeterProvider(
+        metric_readers=[reader],
+        resource=Resource.create(),
+        views=[view_all, view],
+    )
 
     set_meter_provider(provider)
 
