@@ -12,4 +12,6 @@ opentelemetry-instrumentation-requests==0.39.b0
 opentelemetry-semantic-conventions==0.39.b0
 opentelemetry-util-http==0.39.b0
 opentelemetry-exporter-otlp==1.18.0
-
+opentelemetry-exporter-jaeger==1.18.0
+opentelemetry-exporter-zipkin==1.18.0
+opentelemetry-instrumentation-sqlite3==0.39.b0
