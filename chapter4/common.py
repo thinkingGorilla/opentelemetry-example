@@ -6,12 +6,13 @@ from opentelemetry import trace
 from opentelemetry._logs import (
     set_logger_provider,
 )
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.metrics import get_meter_provider, set_meter_provider, Observation
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
-from opentelemetry.sdk._logs.export import ConsoleLogExporter, BatchLogRecordProcessor
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import (
-    ConsoleMetricExporter,
     PeriodicExportingMetricReader,
 )
 from opentelemetry.sdk.resources import Resource
@@ -35,7 +36,8 @@ def configure_logger(name, version):
     )
     provider = LoggerProvider(resource=resource)
     set_logger_provider(provider)
-    exporter = ConsoleLogExporter()
+    # exporter = ConsoleLogExporter()
+    exporter = OTLPLogExporter()
     provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
@@ -58,7 +60,8 @@ def start_recording_memory_metrics(meter):
 
 
 def configure_meter(name, version):
-    exporter = ConsoleMetricExporter()
+    # exporter = ConsoleMetricExporter()
+    exporter = OTLPMetricExporter()
     reader = PeriodicExportingMetricReader(exporter, export_interval_millis=5000)
     local_resource = LocalMachineResourceDetector().detect()
     resource = local_resource.merge(
@@ -80,6 +83,7 @@ def configure_meter(name, version):
 
 
 def configure_tracer(name, version):
+    # exporter = ConsoleSpanExporter()
     exporter = ConsoleSpanExporter()
     span_processor = BatchSpanProcessor(exporter)
     local_resource = LocalMachineResourceDetector().detect()

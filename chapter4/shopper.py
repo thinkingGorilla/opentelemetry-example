@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+from logging.config import dictConfig
 
 import requests
 from opentelemetry import trace
@@ -23,7 +24,17 @@ upstream_duration_histo = meter.create_histogram(
     unit="ms",
 )
 logger = configure_logger("shopper", "0.1.2")
-
+dictConfig(
+    {
+        "version": 1,
+        "handlers": {
+            "otlp": {
+                "class": "opentelemetry.sdk._logs.LoggingHandler",
+            }
+        },
+        "root": {"level": "DEBUG", "handlers": ["otlp"]},
+    }
+)
 
 @tracer.start_as_current_span("browse")
 def browse():
@@ -35,7 +46,7 @@ def browse():
         span.set_attributes(
             {
                 SpanAttributes.HTTP_METHOD: "GET",
-                SpanAttributes.HTTP_FLAVOR: HttpFlavorValues.HTTP_1_1.value,
+                SpanAttributes.HTTP_FLAVOR: str(HttpFlavorValues.HTTP_1_1),
                 SpanAttributes.HTTP_URL: url,
                 SpanAttributes.NET_PEER_IP: "127.0.0.1",
             }

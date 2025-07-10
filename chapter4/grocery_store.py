@@ -119,4 +119,4 @@ def products():
 
 if __name__ == "__main__":
     start_recording_memory_metrics(meter)
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

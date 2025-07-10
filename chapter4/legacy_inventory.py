@@ -58,4 +58,4 @@ def inventory():
 
 if __name__ == "__main__":
     start_recording_memory_metrics(meter)
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5001, use_reloader=False)

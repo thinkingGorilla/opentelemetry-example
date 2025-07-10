@@ -11,4 +11,5 @@ opentelemetry-instrumentation-flask==0.39.b0
 opentelemetry-instrumentation-requests==0.39.b0
 opentelemetry-semantic-conventions==0.39.b0
 opentelemetry-util-http==0.39.b0
+opentelemetry-exporter-otlp==1.18.0
 
