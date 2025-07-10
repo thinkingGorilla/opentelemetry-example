@@ -1,0 +1,10 @@
+helm repo add open-telemetry \
+    https://open-telemetry.github.io/opentelemetry-helm-charts
+
+helm install otel-collector open-telemetry/opentelemetry-collector \
+  --set mode=daemonset \
+  --set image.repository=otel/opentelemetry-collector
+
+helm upgrade otel-collector open-telemetry/opentelemetry-collector \
+  -f ./config.yml
+  --set mode=daemonset

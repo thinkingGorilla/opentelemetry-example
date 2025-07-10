@@ -1,0 +1,9 @@
+kubectl apply -f sidecar.yaml
+
+kubectl describe pod -l app=example
+
+kubectl logs -l app=example -f -c collector
+
+kubectl logs -l component=agent-collector -f
+
+kubectl logs -l component=standalone--collector -f
