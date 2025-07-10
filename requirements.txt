@@ -5,3 +5,10 @@ opentelemetry-sdk==1.18.0
 opentelemetry-propagator-b3==1.10.0
 opentelemetry-exporter-prometheus==1.12.0rc1
 opentelemetry-instrumentation-wsgi==0.39.b0
+opentelemetry-instrumentation==0.39.b0
+opentelemetry-distro==0.39.b0
+opentelemetry-instrumentation-flask==0.39.b0
+opentelemetry-instrumentation-requests==0.39.b0
+opentelemetry-semantic-conventions==0.39.b0
+opentelemetry-util-http==0.39.b0
+
